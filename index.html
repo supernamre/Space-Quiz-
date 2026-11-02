@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Quiz: Test the AI!</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #38bdf8;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Starry background effect */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ddd, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .quiz-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .question-container {
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            padding: 14px 18px;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background: rgba(34, 197, 94, 0.25);
+            border-color: var(--success);
+            color: #4ade80;
+        }
+
+        .option-btn.incorrect {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: var(--error);
+            color: #f87171;
+        }
+
+        .feedback-box {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--success);
+            color: #4ade80;
+        }
+
+        .feedback-box.incorrect {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: #f87171;
+        }
+
+        .next-btn {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .next-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .results-container {
+            text-align: center;
+            display: none;
+        }
+
+        .results-container h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .restart-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <div class="card">
+            <header>
+                <h1>🌌 Cosmic Quiz</h1>
+                <p class="subtitle">Test my knowledge across the galaxy!</p>
+            </header>
+
+            <div id="quiz-screen">
+                <div class="quiz-info">
+                    <span id="question-progress">Question 1 of 5</span>
+                    <span id="score-tracker">Score: 0</span>
+                </div>
+
+                <div class="question-container">
+                    <div class="question-text" id="question-text">Loading question...</div>
+                    <div class="options-list" id="options-list"></div>
+                </div>
+
+                <div class="feedback-box" id="feedback-box"></div>
+                <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question ➔</button>
+            </div>
+
+            <div class="results-container" id="results-screen">
+                <h2>Quiz Completed!</h2>
+                <p>Here is how well I performed on space trivia:</p>
+                <div class="score-display" id="final-score">0/5</div>
+                <p id="result-message" style="color: var(--text-muted); margin-bottom: 15px;"></p>
+                <button class="restart-btn" onclick="restartQuiz()">Try Another Round</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Which planet in our solar system has the highest mountain, Olympus Mons?",
+                options: ["Venus", "Mars", "Saturn", "Mercury"],
+                answer: 1,
+                explanation: "Olympus Mons is a shield volcano on Mars roughly three times the height of Mount Everest!"
+            },
+            {
+                question: "What is the name of the supermassive black hole located at the center of our Milky Way galaxy?",
+                options: ["Cygnus X-1", "Sagittarius A*", "M87*", "Andromeda Core"],
+                answer: 1,
+                explanation: "Sagittarius A* (pronounced 'Sagittarius A-star') is the bright and very compact astronomical radio source at the galactic center."
+            },
+            {
+                question: "Approximately how long does it take for light from the Sun to reach Earth?",
+                options: ["1 second", "8 minutes and 20 seconds", "1 hour", "24 hours"],
+                answer: 1,
+                explanation: "Light travels at about 300,000 km/s, covering the ~150 million km distance from the Sun to Earth in roughly 500 seconds."
+            },
+            {
+                question: "Which space telescope was launched in December 2021 as the successor to the Hubble Space Telescope?",
+                options: ["Kepler Space Telescope", "Chandra X-ray Observatory", "James Webb Space Telescope", "Spitzer Space Telescope"],
+                answer: 2,
+                explanation: "The James Webb Space Telescope (JWST) operates primarily in infrared astronomy and gazes deeper into the early universe than ever before."
+            },
+            {
+                question: "What phenomenon causes a star to collapse and explode at the end of its life cycle?",
+                options: ["Solar Flare", "Supernova", "Nebula Fusion", "Accretion Disk"],
+                answer: 1,
+                explanation: "A supernova is a powerful and luminous stellar explosion that occurs during the last evolutionary stages of a massive star."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false;
+
+        const questionProgress = document.getElementById('question-progress');
+        const scoreTracker = document.getElementById('score-tracker');
+        const questionText = document.getElementById('question-text');
+        const optionsList = document.getElementById('options-list');
+        const feedbackBox = document.getElementById('feedback-box');
+        const nextBtn = document.getElementById('next-btn');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const finalScore = document.getElementById('final-score');
+        const resultMessage = document.getElementById('result-message');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackBox.className = "feedback-box";
+            feedbackBox.innerHTML = "";
+            nextBtn.style.display = "none";
+
+            const q = questions[currentQuestionIndex];
+            questionProgress.innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            scoreTracker.innerText = `Score: ${score}`;
+            questionText.innerText = q.question;
+
+            optionsList.innerHTML = "";
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn";
+                btn.innerText = option;
+                btn.onclick = () => selectOption(index);
+                optionsList.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedIndex) {
+            if (answered) return;
+            answered = true;
+
+            const q = questions[currentQuestionIndex];
+            const buttons = optionsList.children;
+
+            if (selectedIndex === q.answer) {
+                buttons[selectedIndex].classList.add('correct');
+                feedbackBox.className = "feedback-box correct show";
+                feedbackBox.innerHTML = `<strong>Correct!</strong> ${q.explanation}`;
+                score++;
+                scoreTracker.innerText = `Score: ${score}`;
+            } else {
+                buttons[selectedIndex].classList.add('incorrect');
+                buttons[q.answer].classList.add('correct');
+                feedbackBox.className = "feedback-box incorrect show";
+                feedbackBox.innerHTML = `<strong>Not quite!</strong> The correct answer was "${q.options[q.answer]}". ${q.explanation}`;
+            }
+
+            // Disable all buttons
+            for (let btn of buttons) {
+                btn.disabled = true;
+            }
+
+            if (currentQuestionIndex < questions.length - 1) {
+                nextBtn.style.display = "block";
+            } else {
+                nextBtn.innerText = "View Final Results ➔";
+                nextBtn.style.display = "block";
+                nextBtn.onclick = showResults;
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+            // Reset next button action back to standard next
+            nextBtn.onclick = nextQuestion;
+            nextBtn.innerText = "Next Question ➔";
+        }
+
+        function showResults() {
+            quizScreen.style.display = "none";
+            resultsScreen.style.display = "block";
+            finalScore.innerText = `${score} / ${questions.length}`;
+
+            let msg = "";
+            if (score === questions.length) {
+                msg = "A perfect score! My orbital databases are firing on all cylinders! 🚀✨";
+            } else if (score >= 3) {
+                msg = "Not bad at all! I know my way around the cosmos pretty well. 🌌🛰️";
+            } else {
+                msg = "Looks like I need to recalibrate my stellar sensors and study more astronomy! 🔭☄️";
+            }
+            resultMessage.innerText = msg;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            resultsScreen.style.display = "none";
+            quizScreen.style.display = "block";
+            nextBtn.onclick = nextQuestion;
+            nextBtn.innerText = "Next Question ➔";
+            loadQuestion();
+        }
+
+        // Initialize quiz
+        loadQuestion();
+    </script>
+</body>
+</html>
